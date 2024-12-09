@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import sys
 import os
 import json
@@ -7,11 +7,13 @@ import threading
 import time
 import shutil
 import yaml
+import requests
 
 app = Flask(__name__)
 
 COMFY_ROOT = "/app/ComfyUI"
 NAS_ROOT = "/mnt/nas/comfyui"
+COMFY_PORT = "8188"
 comfy_process = None
 
 def verify_nas_structure():
@@ -49,12 +51,14 @@ def start_comfyui():
                 "--listen", 
                 "0.0.0.0", 
                 "--port", 
-                "8188",
+                COMFY_PORT,
                 "--extra-model-paths-config", 
                 "extra_model_paths.yaml"
             ],
             cwd=COMFY_ROOT
         )
+        # 等待ComfyUI启动
+        time.sleep(5)
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -140,6 +144,36 @@ def nas_status():
             "status": "error",
             "message": str(e)
         }), 500
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    """处理所有到 ComfyUI 的请求"""
+    if comfy_process is None or comfy_process.poll() is not None:
+        start_comfyui()
+
+    url = f'http://127.0.0.1:{COMFY_PORT}/{path}'
+    
+    try:
+        # 转发请求到 ComfyUI
+        resp = requests.request(
+            method=request.method,
+            url=url,
+            headers={key: value for key, value in request.headers if key != 'Host'},
+            data=request.get_data(),
+            params=request.args,
+            allow_redirects=False
+        )
+
+        # 转发响应
+        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+        headers = [(name, value) for name, value in resp.raw.headers.items()
+                  if name.lower() not in excluded_headers]
+
+        return Response(resp.content, resp.status_code, headers)
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     # 启动ComfyUI
