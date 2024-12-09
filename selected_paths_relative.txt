@@ -1,0 +1,6 @@
+.github
+.github\workflows
+.github\workflows\acr-build.yml
+Dockerfile
+server.py
+startup.sh

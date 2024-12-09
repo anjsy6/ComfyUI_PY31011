@@ -1,0 +1,29 @@
+name: Build and Push to ACR
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  ACR_REGISTRY: crpi-0ph7u9lth4oj58qr.cn-hangzhou.personal.cr.aliyuncs.com
+  ACR_NAMESPACE: comfyui111
+  IMAGE_NAME: comfyui31011
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Login to ACR
+        uses: aliyun/acr-login@v1
+        with:
+          login-server: ${{ env.ACR_REGISTRY }}
+          username: ${{ secrets.ALICLOUD_ACCESS_KEY }}
+          password: ${{ secrets.ALICLOUD_SECRET_KEY }}
+      
+      - name: Build and push image
+        run: |
+          docker build -t ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
