@@ -18,7 +18,7 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git /app/ComfyUI
 WORKDIR /app/ComfyUI
 RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 RUN pip3 install -r requirements.txt
-RUN pip3 install flask pyyaml  # 添加 pyyaml
+RUN pip3 install flask pyyaml requests  # 合并安装额外依赖
 
 # 复制服务器代码
 COPY server.py /app/
