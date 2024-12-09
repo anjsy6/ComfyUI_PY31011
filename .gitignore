@@ -1,0 +1,3 @@
+echo "selected_paths_absolute.txt
+selected_paths_relative.txt
+文件路径导出工具.exe" > .gitignore

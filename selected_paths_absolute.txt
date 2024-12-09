@@ -1,6 +1,0 @@
-E:\1\alicomfyui\comfyui-function\.github
-E:\1\alicomfyui\comfyui-function\.github\workflows
-E:\1\alicomfyui\comfyui-function\.github\workflows\acr-build.yml
-E:\1\alicomfyui\comfyui-function\Dockerfile
-E:\1\alicomfyui\comfyui-function\server.py
-E:\1\alicomfyui\comfyui-function\startup.sh
