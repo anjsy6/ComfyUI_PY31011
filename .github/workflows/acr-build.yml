@@ -5,11 +5,6 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-env:
-  ACR_REGISTRY: crpi-0ph7u9lth4oj58qr.cn-hangzhou.personal.cr.aliyuncs.com
-  ACR_NAMESPACE: comfyui111
-  IMAGE_NAME: comfyui31011
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,13 +12,10 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: Login to ACR
-        env:
-          ACR_USERNAME: ${{ secrets.ALICLOUD_ACCESS_KEY }}
-          ACR_PASSWORD: ${{ secrets.ALICLOUD_SECRET_KEY }}
         run: |
-          echo "$ACR_PASSWORD" | docker login $ACR_REGISTRY -u $ACR_USERNAME --password-stdin
+          docker login --username=${{ secrets.ALICLOUD_ACCESS_KEY }} --password=${{ secrets.ALICLOUD_SECRET_KEY }} crpi-0ph7u9lth4oj58qr.cn-hangzhou.personal.cr.aliyuncs.com
       
-      - name: Build and push image
+      - name: Build and push
         run: |
-          docker build -t $ACR_REGISTRY/$ACR_NAMESPACE/$IMAGE_NAME:latest .
-          docker push $ACR_REGISTRY/$ACR_NAMESPACE/$IMAGE_NAME:latest
+          docker build -t crpi-0ph7u9lth4oj58qr.cn-hangzhou.personal.cr.aliyuncs.com/comfyui111/comfyui31011:latest .
+          docker push crpi-0ph7u9lth4oj58qr.cn-hangzhou.personal.cr.aliyuncs.com/comfyui111/comfyui31011:latest
