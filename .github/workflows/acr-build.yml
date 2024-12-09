@@ -11,9 +11,27 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
+      - name: Install aliyun cli
+        run: |
+          curl -o aliyun-cli-linux-latest-amd64.tgz https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+          tar -xvzf aliyun-cli-linux-latest-amd64.tgz
+          sudo mv aliyun /usr/local/bin/
+      
+      - name: Configure aliyun cli
+        run: |
+          aliyun configure set \
+            --profile default \
+            --mode AK \
+            --region cn-hangzhou \
+            --access-key-id ${{ secrets.ALICLOUD_ACCESS_KEY }} \
+            --access-key-secret ${{ secrets.ALICLOUD_SECRET_KEY }}
+      
       - name: Login to ACR
         run: |
-          echo "${{ secrets.ALICLOUD_SECRET_KEY }}" | docker login --username "${{ secrets.ALICLOUD_ACCESS_KEY }}" --password-stdin crpi-0ph7u9lth4oj58qr.cn-hangzhou.personal.cr.aliyuncs.com
+          aliyun cr GET-LOGIN-PASSWORD | docker login \
+            --username ${{ secrets.ALICLOUD_ACCESS_KEY }} \
+            --password-stdin \
+            crpi-0ph7u9lth4oj58qr.cn-hangzhou.personal.cr.aliyuncs.com
       
       - name: Build and push
         run: |
