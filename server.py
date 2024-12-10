@@ -90,12 +90,29 @@ def read_process_output(process, name="ComfyUI"):
         if output == '' and error == '' and process.poll() is not None:
             break
 
+def wait_for_comfyui(timeout=60):
+    """等待ComfyUI启动并测试连接"""
+    logger.info(f"等待ComfyUI启动，超时时间: {timeout}秒")
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            response = requests.get(f"http://127.0.0.1:{COMFY_PORT}/", timeout=5)
+            if response.status_code == 200:
+                logger.info("ComfyUI服务已就绪")
+                return True
+            logger.info(f"ComfyUI返回状态码: {response.status_code}")
+        except requests.exceptions.RequestException:
+            logger.info("ComfyUI尚未就绪，继续等待...")
+        time.sleep(5)
+    logger.error("等待ComfyUI启动超时")
+    return False
+
 def start_comfyui():
     """启动ComfyUI进程"""
     global comfy_process
     if comfy_process is None:
-        logger.info("准备启动ComfyUI进程...")
         try:
+            logger.info("准备启动ComfyUI进程...")
             verify_nas_structure()
             verify_config_file()
             
@@ -120,25 +137,23 @@ def start_comfyui():
                 bufsize=1
             )
             
-            # 创建线程读取输出
+            logger.info("ComfyUI进程已启动，进程ID: %d", comfy_process.pid)
+            
+            # 创建线程来监控输出
             threading.Thread(target=read_process_output, args=(comfy_process,), daemon=True).start()
             
-            logger.info("等待ComfyUI启动...")
-            time.sleep(30)
+            # 等待服务就绪
+            if not wait_for_comfyui(timeout=60):
+                raise Exception("ComfyUI服务启动失败")
             
-            if comfy_process.poll() is None:
-                logger.info("ComfyUI进程启动成功")
-            else:
-                logger.error("ComfyUI进程启动失败")
-                stdout, stderr = comfy_process.communicate()
-                logger.error(f"启动失败stdout: {stdout}")
-                logger.error(f"启动失败stderr: {stderr}")
-                raise Exception("ComfyUI启动失败")
-                
+            logger.info("ComfyUI进程启动成功")
+            
         except Exception as e:
             logger.error(f"启动ComfyUI时发生错误: {str(e)}", exc_info=True)
+            if comfy_process:
+                comfy_process.terminate()
+                comfy_process = None
             raise
-
 @app.route('/health', methods=['GET'])
 def health_check():
     """健康检查接口"""
