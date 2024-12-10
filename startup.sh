@@ -56,13 +56,13 @@ fi
 
 # 设置ComfyUI配置
 cat > $COMFY_ROOT/extra_model_paths.yaml << EOF
-checkpoints: $NAS_ROOT/checkpoints
-configs: $NAS_ROOT/configs
-embeddings: $NAS_ROOT/embeddings
-loras: $NAS_ROOT/loras
-vae: $NAS_ROOT/vae
-custom_nodes: $NAS_ROOT/custom_nodes
-extensions: $NAS_ROOT/extensions
+checkpoints_path: $NAS_ROOT/checkpoints
+config_path: $NAS_ROOT/configs
+embeddings_path: $NAS_ROOT/embeddings
+loras_path: $NAS_ROOT/loras
+vae_path: $NAS_ROOT/vae
+custom_nodes_path: $NAS_ROOT/custom_nodes
+extensions_path: $NAS_ROOT/extensions
 EOF
 
 echo "NAS mount configuration completed"

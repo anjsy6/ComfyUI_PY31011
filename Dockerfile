@@ -31,6 +31,10 @@ RUN chmod +x /app/startup.sh
 ENV PYTHONUNBUFFERED=1
 ENV NVIDIA_VISIBLE_DEVICES=all
 
+# 清理pip缓存
+RUN pip3 cache purge && \
+    rm -rf /root/.cache/pip/*
+
 # 暴露端口
 EXPOSE 9000
 
