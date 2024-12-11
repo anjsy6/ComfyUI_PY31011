@@ -32,8 +32,9 @@ RUN mkdir -p /app/ComfyUI_backup && \
 COPY server.py /app/
 COPY startup.sh /app/
 
-# 设置权限
-RUN chmod +x /app/startup.sh && \
+# 修复换行符并设置权限
+RUN sed -i 's/\r$//' /app/startup.sh && \
+    chmod +x /app/startup.sh && \
     chown -R fcuser:fcuser /app && \
     chmod -R 755 /app
 
