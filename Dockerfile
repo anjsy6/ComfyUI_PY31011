@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     git \
+    tree \
     && rm -rf /var/lib/apt/lists/*
 
 # 创建非root用户
@@ -22,6 +23,10 @@ WORKDIR /app/ComfyUI
 RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 RUN pip3 install -r requirements.txt
 RUN pip3 install flask pyyaml requests
+
+# 备份ComfyUI原始文件
+RUN mkdir -p /app/ComfyUI_backup && \
+    cp -r /app/ComfyUI/* /app/ComfyUI_backup/
 
 # 复制服务器代码
 COPY server.py /app/

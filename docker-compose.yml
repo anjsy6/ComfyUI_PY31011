@@ -1,0 +1,19 @@
+version: '3'
+services:
+  comfyui:
+    build: .
+    ports:
+      - "9000:9000"
+      - "8188:8188"  # 暴露 ComfyUI 端口
+    volumes:
+      - ./test_nas:/mnt/nas/comfyui  # 模拟 NAS 存储
+    environment:
+      - PYTHONUNBUFFERED=1
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

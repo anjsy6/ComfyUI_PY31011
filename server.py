@@ -80,15 +80,21 @@ def verify_config_file():
 
 def read_process_output(process, name="ComfyUI"):
     """持续读取进程输出"""
+    log_file = open('/app/comfyui.log', 'w')
     while True:
         output = process.stdout.readline()
         if output:
+            log_file.write(f"[STDOUT] {output}")
+            log_file.flush()
             logger.info(f"{name} 输出: {output.strip()}")
         error = process.stderr.readline()
         if error:
+            log_file.write(f"[STDERR] {error}")
+            log_file.flush()
             logger.error(f"{name} 错误: {error.strip()}")
         if output == '' and error == '' and process.poll() is not None:
             break
+    log_file.close()
 
 def wait_for_comfyui(timeout=60):
     """等待ComfyUI启动并测试连接"""
@@ -116,8 +122,14 @@ def start_comfyui():
             verify_nas_structure()
             verify_config_file()
             
+            # 检查原始目录中的模型文件
+            checkpoints_dir = os.path.join(COMFY_ROOT, "checkpoints")
+            if not os.path.exists(checkpoints_dir) or not os.listdir(checkpoints_dir):
+                logger.warning("警告: ComfyUI原始checkpoints目录为空")
+            
             cmd = [
                 "python3", 
+                "-u",  # 使用无缓冲输出
                 "main.py", 
                 "--listen", 
                 "0.0.0.0", 
@@ -128,13 +140,19 @@ def start_comfyui():
             ]
             logger.info(f"执行命令: {' '.join(cmd)}")
             
+            # 修改进程启动方式，增加环境变量
+            env = os.environ.copy()
+            env["PYTHONPATH"] = f"{COMFY_ROOT}:{env.get('PYTHONPATH', '')}"
+            env["PYTHONUNBUFFERED"] = "1"  # 禁用Python输出缓冲
+            
             comfy_process = subprocess.Popen(
                 cmd,
                 cwd=COMFY_ROOT,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-                bufsize=1
+                bufsize=1,
+                env=env
             )
             
             logger.info("ComfyUI进程已启动，进程ID: %d", comfy_process.pid)
@@ -143,7 +161,15 @@ def start_comfyui():
             threading.Thread(target=read_process_output, args=(comfy_process,), daemon=True).start()
             
             # 等待服务就绪
-            if not wait_for_comfyui(timeout=60):
+            if not wait_for_comfyui(timeout=180):
+                if comfy_process.poll() is not None:
+                    logger.error(f"ComfyUI进程已退出，退出码：{comfy_process.poll()}")
+                    # 读取日志文件
+                    try:
+                        with open('/app/comfyui.log', 'r') as f:
+                            logger.error(f"ComfyUI详细日志:\n{f.read()}")
+                    except Exception as e:
+                        logger.error(f"读取日志文件失败: {str(e)}")
                 raise Exception("ComfyUI服务启动失败")
             
             logger.info("ComfyUI进程启动成功")
@@ -154,6 +180,7 @@ def start_comfyui():
                 comfy_process.terminate()
                 comfy_process = None
             raise
+        
 @app.route('/health', methods=['GET'])
 def health_check():
     """健康检查接口"""
